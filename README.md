@@ -2,6 +2,8 @@
 
 For long-term, centralized storage of the research data, the team developed a data warehouse in [DuckDB](https://duckdb.org/) that consolidates demographic, housing, health, education, and economic data for the North Mecklenburg towns of **Davidson, Cornelius, and Huntersville** (Mecklenburg County, NC). Data is pulled from the U.S. Census ACS, Census TIGER/Line geometry, Zillow, the United Way ALICE study, the Charlotte Regional housing affordability reference set, NC DHHS mental health/substance use facility listings, CDC PLACES, and NC DPI school assessment data. The pipeline follows a **medallion architecture**, a modern variation of the classic 3-layer data architecture (raw → clean → modeled). In the Bronze layer, the research team stages raw, unmodified data directly from their data sources. In the Silver layer, the raw data is then filtered, cleaned, and augmented to make it ready for modeling. Finally, in the Gold layer, the data is restructured into star schema data models to optimize it for reporting and analytics. Each of these stages has its own schema in the data warehouse, and a final layer of tables sits atop the Gold layer that provides direct access to the data from the website for the purposes of creating tables and visualizations, as well as producing data exports for end users. Finally, the data lands in a Kimball-style star schema, ready for BI tools, GIS, and ad-hoc analysis.The DuckDB database file is hosted on [MotherDuck](https://motherduck.com/), a cloud data warehouse platform with a free tier that is adequate for the research team’s needs.
 
+NOTE: The code was written with CLAUDE AI assistance.
+
 ---
 
 ## Purpose
