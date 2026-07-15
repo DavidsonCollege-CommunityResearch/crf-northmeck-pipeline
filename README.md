@@ -6,7 +6,7 @@ For long-term, centralized storage of the research data, the team developed a da
 
 ## Purpose
 
-North Meck Insights uses this warehouse to answer community-needs-assessment questions that span multiple public datasets and geographies at once — e.g. *"How does housing burden in Huntersville compare to school proficiency and rates of uninsurance?"* Each source system ships its own format, geography, and vintage; this pipeline normalizes all of them onto a common set of dimensions (**block group**, **town**, **year**) so they can be joined directly in SQL or a BI tool without bespoke reconciliation every time. Also, the data warehouse serves for data automation purposes as well, leaving conveniance for adding data for future cohorts as well.
+North Meck Insights uses this warehouse to answer community-needs-assessment questions that span multiple public datasets and geographies at once — e.g. *"How does housing burden in Huntersville compare to school proficiency and rates of uninsurance?"* Each source system ships its own format, geography, and vintage; this pipeline normalizes all of them onto a common set of dimensions (**block group**, **town**, **year**) so they can be joined directly in SQL or a BI tool without bespoke reconciliation every time. Also, the data warehouse serves for data automation purposes as well, leaving conveniance for adding data for future cohorts.
 
 ---
 
