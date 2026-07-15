@@ -1,6 +1,6 @@
-
 # ==============================================================================
 # EXTERNAL DATA PIPELINE: Charlotte Metro Housing Affordability Reference Data
+# Author: Paul Park, Claude Code
 # Objective: Ingest AMI affordability gap, housing wage, and rent by bedroom
 #            data into Star Schema
 # ==============================================================================
@@ -15,9 +15,9 @@ from functions.mother_duck_connector import get_md_connection
  
 con = get_md_connection()
  
-# ----------------------------------------------
-# 1. BRONZE LAYER: Raw Ingestion from CSV
-# ----------------------------------------------
+# ==============================================================================
+# STEP 1: BRONZE LAYER (Raw Ingestion from CSV)
+# ==============================================================================
 print("1. Ingesting raw charlotte  CSV files into Bronze layer...")
 con.execute(""" 
             CREATE OR REPLACE TABLE bronze.charlotte_ami_affordability_gap AS

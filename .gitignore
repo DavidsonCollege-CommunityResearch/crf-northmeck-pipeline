@@ -1,2 +1,5 @@
 .env
 nmidw_local_backup.duckdb
+data/*.zip
+data/tl_2023_37_bg/
+data/tl_2023_37_tabblock20/

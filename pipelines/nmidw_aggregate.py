@@ -80,8 +80,21 @@ con.execute("""
     CREATE OR REPLACE VIEW v_gold_fact_ami_affordability_gap AS SELECT * FROM gold.fact_ami_affordability_gap;
     CREATE OR REPLACE VIEW v_gold_fact_occupation_housing_wage AS SELECT * FROM gold.fact_occupation_housing_wage;
     CREATE OR REPLACE VIEW v_gold_cdc_places AS SELECT * FROM gold.cdc_places;
+    CREATE OR REPLACE VIEW dim_block AS SELECT * FROM gold.dim_block;
+    CREATE OR REPLACE VIEW v_gold_fact_school_test_results     AS SELECT * FROM gold.fact_school_test_results;
+    CREATE OR REPLACE VIEW v_gold_fact_school_growth           AS SELECT * FROM gold.fact_school_growth;
+    CREATE OR REPLACE VIEW v_gold_fact_school_hs_indicators    AS SELECT * FROM gold.fact_school_hs_indicators;
+    CREATE OR REPLACE VIEW v_gold_fact_school_assessment_master AS SELECT * FROM gold.fact_school_assessment_master;
+    CREATE OR REPLACE VIEW v_gold_fact_school_eog_eoc          AS SELECT * FROM gold.fact_school_eog_eoc;
+    CREATE OR REPLACE VIEW v_gold_fact_school_act              AS SELECT * FROM gold.fact_school_act;
+    CREATE OR REPLACE VIEW v_gold_fact_school_workkeys         AS SELECT * FROM gold.fact_school_workkeys;
+    CREATE OR REPLACE VIEW v_gold_fact_school_english_learner  AS SELECT * FROM gold.fact_school_english_learner;
             
-    -- ==========================================
+    -- This is a view for Tania's data vis, so we are not dropping this view
+    CREATE OR REPLACE VIEW v_mh_su_facilities_vis AS SELECT * FROM silver.mh_su_facilities_clean;
+
+            
+    -- ==============================================================================
     -- Aggregation 1: Town Health Data
     -- Groups income and calculates insurance statuses
     -- Sources: fact_household_income_in_the_past_12_months_town,
@@ -89,7 +102,7 @@ con.execute("""
     --          fact_types_of_health_insurance_coverage_by_age_town,
     --          fact_health_insurance_coverage_status_and_type_by_employment_status_town,
     --          fact_health_insurance_coverage_status_and_type_by_household_income_in_the_past_12_months_town
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_health_data;
     CREATE OR REPLACE TABLE main.agg_town_health_data AS
     SELECT
@@ -149,12 +162,12 @@ con.execute("""
     ORDER BY town, year;
 
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 2: Town Health Insurance Data Mart
     -- Translates teammate's R 'mutate' logic into DuckDB SQL
     -- Sources: fact_health_insurance_coverage_status_by_sex_by_age_town (sex/age breakdown)
     --          fact_types_of_health_insurance_coverage_by_age_town (coverage type breakdown)
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_health_insurance;
     CREATE TABLE main.agg_town_health_insurance AS
     SELECT
@@ -162,9 +175,9 @@ con.execute("""
         sa.place_GEOID AS GEOID,
         sa.year_key AS year,
 
-        -- -----------------------------------------------------
+        -- ------------------------------------------------------------------------------
         -- 1. INSURED BY AGE (ins_*)
-        -- -----------------------------------------------------
+        -- ------------------------------------------------------------------------------
         (sa.total_male_under_6_years_with_health_insurance_coverage +
          sa.total_male_6_to_18_years_with_health_insurance_coverage +
          sa.total_female_under_6_years_with_health_insurance_coverage +
@@ -188,9 +201,9 @@ con.execute("""
          sa.total_female_65_to_74_years_with_health_insurance_coverage +
          sa.total_female_75_years_and_over_with_health_insurance_coverage) AS ins_65_over,
 
-        -- -----------------------------------------------------
+        -- ------------------------------------------------------------------------------
         -- 2. UNINSURED BY AGE (unins_*)
-        -- -----------------------------------------------------
+        -- ------------------------------------------------------------------------------
         (sa.total_male_under_6_years_no_health_insurance_coverage +
          sa.total_male_6_to_18_years_no_health_insurance_coverage +
          sa.total_female_under_6_years_no_health_insurance_coverage +
@@ -214,16 +227,16 @@ con.execute("""
          sa.total_female_65_to_74_years_no_health_insurance_coverage +
          sa.total_female_75_years_and_over_no_health_insurance_coverage) AS unins_65_over,
 
-        -- -----------------------------------------------------
+        -- ------------------------------------------------------------------------------
         -- 3. OVERALL TOTALS
-        -- -----------------------------------------------------
+        -- ------------------------------------------------------------------------------
         (sa.total_male_under_6_years_with_health_insurance_coverage + sa.total_male_6_to_18_years_with_health_insurance_coverage + sa.total_female_under_6_years_with_health_insurance_coverage + sa.total_female_6_to_18_years_with_health_insurance_coverage + sa.total_male_19_to_25_years_with_health_insurance_coverage + sa.total_female_19_to_25_years_with_health_insurance_coverage + sa.total_male_26_to_34_years_with_health_insurance_coverage + sa.total_female_26_to_34_years_with_health_insurance_coverage + sa.total_male_35_to_44_years_with_health_insurance_coverage + sa.total_male_45_to_54_years_with_health_insurance_coverage + sa.total_male_55_to_64_years_with_health_insurance_coverage + sa.total_female_35_to_44_years_with_health_insurance_coverage + sa.total_female_45_to_54_years_with_health_insurance_coverage + sa.total_female_55_to_64_years_with_health_insurance_coverage + sa.total_male_65_to_74_years_with_health_insurance_coverage + sa.total_male_75_years_and_over_with_health_insurance_coverage + sa.total_female_65_to_74_years_with_health_insurance_coverage + sa.total_female_75_years_and_over_with_health_insurance_coverage) AS all_ins,
 
         (sa.total_male_under_6_years_no_health_insurance_coverage + sa.total_male_6_to_18_years_no_health_insurance_coverage + sa.total_female_under_6_years_no_health_insurance_coverage + sa.total_female_6_to_18_years_no_health_insurance_coverage + sa.total_male_19_to_25_years_no_health_insurance_coverage + sa.total_female_19_to_25_years_no_health_insurance_coverage + sa.total_male_26_to_34_years_no_health_insurance_coverage + sa.total_female_26_to_34_years_no_health_insurance_coverage + sa.total_male_35_to_44_years_no_health_insurance_coverage + sa.total_male_45_to_54_years_no_health_insurance_coverage + sa.total_male_55_to_64_years_no_health_insurance_coverage + sa.total_female_35_to_44_years_no_health_insurance_coverage + sa.total_female_45_to_54_years_no_health_insurance_coverage + sa.total_female_55_to_64_years_no_health_insurance_coverage + sa.total_male_65_to_74_years_no_health_insurance_coverage + sa.total_male_75_years_and_over_no_health_insurance_coverage + sa.total_female_65_to_74_years_no_health_insurance_coverage + sa.total_female_75_years_and_over_no_health_insurance_coverage) AS all_unins,
 
-        -- -----------------------------------------------------
+        -- ------------------------------------------------------------------------------
         -- 4. TYPE OF COVERAGE (B27010 Variables)
-        -- -----------------------------------------------------
+        -- ------------------------------------------------------------------------------
 
         -- Employer based:
         -- Note: Added 19-34 variables here for data integrity (Teammate's R code missed them)
@@ -315,13 +328,13 @@ con.execute("""
       town, year;
 
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 3: Town Economic Trends
     -- Extracts pure median indicators for financial tracking
     -- Sources: fact_median_household_income_in_the_past_12_months_town,
     --          fact_median_value_dollars_town, fact_median_gross_rent_dollars_town,
     --          fact_gini_index_of_income_inequality_town
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_economic_trends;
     CREATE TABLE main.agg_town_economic_trends AS
     SELECT
@@ -344,7 +357,7 @@ con.execute("""
     ORDER BY town, year;
 
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 4: Economic Mobility & Education
     -- Tracks relationship between degree attainment and poverty
     -- Sources: fact_educational_attainment_for_the_population_25_years_and_over_town,
@@ -353,7 +366,7 @@ con.execute("""
     --          fact_poverty_status_in_the_past_12_months_by_sex_by_age_town,
     --          fact_employment_status_for_the_population_16_years_and_over_town (unemployed count),
     --          fact_health_insurance_coverage_status_and_type_by_employment_status_town (labor force total)
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.economic_mobility_education;
     CREATE TABLE main.economic_mobility_education AS
     SELECT
@@ -382,11 +395,11 @@ con.execute("""
     ORDER BY town, year;
 
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 5: Educational Attainment by Town
     -- Mirrors structure of educational_attainment_by_town_acs_b15003.csv reference
     -- Source: fact_educational_attainment_for_the_population_25_years_and_over_town
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_educational_attainment;
     CREATE TABLE main.agg_town_educational_attainment AS
     SELECT
@@ -437,11 +450,11 @@ con.execute("""
     ORDER BY town, year;
 
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 6: School Enrollment by Level by Town
     -- Mirrors structure of school_enrollment_by_level_by_town_acs_b14001.csv reference
     -- Source: fact_school_enrollment_by_level_of_school_for_the_population_3_years_and_over_town
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_school_enrollment;
     CREATE TABLE main.agg_town_school_enrollment AS
     SELECT
@@ -484,7 +497,7 @@ con.execute("""
     ORDER BY town, year;
 
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 7: Town Demographics
     -- Normalizes demographic totals into percentage rates
     -- Sources: fact_sex_by_age_by_disability_status_town, fact_race_town,
@@ -493,7 +506,7 @@ con.execute("""
     --          fact_educational_attainment_for_the_population_25_years_and_over_town,
     --          fact_types_of_computers_in_household_town, fact_presence_and_types_of_internet_subscriptions_in_household_town,
     --          fact_median_household_income_in_the_past_12_months_town, fact_median_value_dollars_town
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_demographics;
     CREATE TABLE main.agg_town_demographics AS
     SELECT
@@ -549,13 +562,13 @@ con.execute("""
     ORDER BY town, year;
 
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 8: Disability Status by Age and Sex by Town
     -- Tracks disability prevalence across age groups, broken out by sex
     -- Source: fact_sex_by_age_by_disability_status_town
     -- Requires acs_variables_raw to include the full B18101 age x sex x
     -- disability breakdown (B18101_004 through B18101_039)
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_disability_status;
     CREATE TABLE main.agg_town_disability_status AS
     SELECT
@@ -564,9 +577,9 @@ con.execute("""
       ds.year_key AS year,
       ds.total AS total_population,
 
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       -- 1. WITH A DISABILITY, BY AGE GROUP (combined male + female)
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       (ds.total_male_under_5_years_with_a_disability + ds.total_female_under_5_years_with_a_disability) AS disab_under5,
       (ds.total_male_5_to_17_years_with_a_disability + ds.total_female_5_to_17_years_with_a_disability) AS disab_5_17,
       (ds.total_male_18_to_34_years_with_a_disability + ds.total_female_18_to_34_years_with_a_disability) AS disab_18_34,
@@ -574,9 +587,9 @@ con.execute("""
       (ds.total_male_65_to_74_years_with_a_disability + ds.total_female_65_to_74_years_with_a_disability) AS disab_65_74,
       (ds.total_male_75_years_and_over_with_a_disability + ds.total_female_75_years_and_over_with_a_disability) AS disab_75_over,
 
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       -- 2. NO DISABILITY, BY AGE GROUP (combined male + female)
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       (ds.total_male_under_5_years_no_disability + ds.total_female_under_5_years_no_disability) AS no_disab_under5,
       (ds.total_male_5_to_17_years_no_disability + ds.total_female_5_to_17_years_no_disability) AS no_disab_5_17,
       (ds.total_male_18_to_34_years_no_disability + ds.total_female_18_to_34_years_no_disability) AS no_disab_18_34,
@@ -584,9 +597,9 @@ con.execute("""
       (ds.total_male_65_to_74_years_no_disability + ds.total_female_65_to_74_years_no_disability) AS no_disab_65_74,
       (ds.total_male_75_years_and_over_no_disability + ds.total_female_75_years_and_over_no_disability) AS no_disab_75_over,
 
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       -- 3. TOTAL DISABILITY COUNT & OVERALL RATE
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       (ds.total_male_under_5_years_with_a_disability + ds.total_female_under_5_years_with_a_disability +
        ds.total_male_5_to_17_years_with_a_disability + ds.total_female_5_to_17_years_with_a_disability +
        ds.total_male_18_to_34_years_with_a_disability + ds.total_female_18_to_34_years_with_a_disability +
@@ -604,9 +617,9 @@ con.execute("""
         / NULLIF(ds.total, 0)
       ) * 100, 2) AS disability_rate_pct,
 
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       -- 4. DISABILITY RATE BY AGE GROUP (% of that age group's population)
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       ROUND((
         (ds.total_male_under_5_years_with_a_disability + ds.total_female_under_5_years_with_a_disability)
         / NULLIF(ds.total_male_under_5_years_with_a_disability + ds.total_female_under_5_years_with_a_disability +
@@ -643,9 +656,9 @@ con.execute("""
                  ds.total_male_75_years_and_over_no_disability + ds.total_female_75_years_and_over_no_disability, 0)
       ) * 100, 2) AS disability_rate_75_over_pct,
 
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       -- 5. DISABILITY RATE BY SEX
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       ROUND((
         (ds.total_male_under_5_years_with_a_disability + ds.total_male_5_to_17_years_with_a_disability +
          ds.total_male_18_to_34_years_with_a_disability + ds.total_male_35_to_64_years_with_a_disability +
@@ -666,13 +679,13 @@ con.execute("""
     ORDER BY town, year;
 
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 9: Racial Equity Snapshot
     -- Race/ethnicity population shares as a foundation for cross-topic equity analysis
     -- (e.g. join this to poverty, housing burden, or health insurance tables by GEOID/year
     -- to compute disparity ratios across topics)
     -- Source: fact_race_town, fact_hispanic_or_latino_origin_town, fact_total_population_town
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_racial_equity_snapshot;
     CREATE TABLE main.agg_town_racial_equity_snapshot AS
     SELECT
@@ -698,18 +711,19 @@ con.execute("""
     ORDER BY town, year;
 
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 10: Town Housing Burden
     -- Calculates rent burden percentages
     -- Sources: fact_tenure_town, fact_gross_rent_as_a_percentage_of_household_income_in_the_past_12_months_town
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_housing_burden;
     CREATE TABLE main.agg_town_housing_burden AS
     SELECT
       tn.place_GEOID AS GEOID,
       t.town_name AS town,
       tn.year_key AS year,
-      tn.total_renter_occupied AS total_households,
+      tn.total_renter_occupied AS total_renter_households,
+      (tn.total_renter_occupied + tn.total_owner_occupied) AS total_households,
       (rb.total_30_0_to_34_9_percent + rb.total_35_0_to_39_9_percent + rb.total_40_0_to_49_9_percent) AS cost_burdened_households,
       rb.total_50_0_percent_or_more AS severely_cost_burdened_households,
       ROUND(((rb.total_30_0_to_34_9_percent + rb.total_35_0_to_39_9_percent + rb.total_40_0_to_49_9_percent + rb.total_50_0_percent_or_more) / tn.total_renter_occupied) * 100, 1) AS "housing_burden_rate_%"
@@ -720,14 +734,16 @@ con.execute("""
     WHERE t.town_name != 'Other'
     ORDER BY town, year;
 
+            
+      
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 11: Housing Affordability Index
     -- Derives price-to-income and rent-to-income ratios
     -- Sources: fact_median_household_income_in_the_past_12_months_town, fact_median_value_dollars_town,
     --          fact_median_gross_rent_dollars_town,
     --          fact_median_gross_rent_as_a_percentage_of_household_income_in_the_past_12_months_dollars_town
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_housing_affordability_index;
     CREATE TABLE main.agg_town_housing_affordability_index AS
     SELECT
@@ -751,13 +767,13 @@ con.execute("""
     ORDER BY town, year;
 
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 12: Housing Stability & Displacement Risk
     -- Now uses full B25038 breakdown (year moved in by tenure) for true
     -- displacement risk signal: recent movers vs long-tenured residents
     -- Source: fact_vacancy_status_town, fact_housing_units_town,
     --         fact_tenure_by_year_householder_moved_into_unit_town, fact_tenure_town
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_housing_stability;
     CREATE TABLE main.agg_town_housing_stability AS
     SELECT
@@ -811,13 +827,13 @@ con.execute("""
     ORDER BY town, year;
 
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 13: Childcare & Parental Employment
     -- Now uses full B23008 breakdown to show how parental labor force
     -- participation shapes children's living/care arrangements
     -- Source: fact_age_of_own_children_under_18_years_in_families_and_subfamilies_..._town,
     --         fact_grandchildren_under_18_years_living_with_a_grandparent_householder_..._town
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_childcare;
     CREATE TABLE main.agg_town_childcare AS
     SELECT
@@ -828,9 +844,9 @@ con.execute("""
       ch.total_under_6_years AS children_under6,
       ch.total_6_to_17_years AS children_6_17,
 
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       -- Under 6 years: living arrangement by parental labor force status
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       ch.total_under_6_years_living_with_two_parents_both_parents_in_labor_force AS under6_two_parents_both_working,
       ch.total_under_6_years_living_with_two_parents_father_only_in_labor_force AS under6_two_parents_father_only_working,
       ch.total_under_6_years_living_with_two_parents_mother_only_in_labor_force AS under6_two_parents_mother_only_working,
@@ -851,9 +867,9 @@ con.execute("""
         / NULLIF(ch.total_under_6_years, 0)
       ) * 100, 2) AS pct_under6_likely_needs_childcare,
 
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       -- 6 to 17 years: living arrangement by parental labor force status
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       ch.total_6_to_17_years_living_with_two_parents AS children_6_17_two_parent_hh,
       ROUND((ch.total_6_to_17_years_living_with_two_parents / NULLIF(ch.total_6_to_17_years, 0)) * 100, 2) AS pct_6_17_two_parent_hh,
 
@@ -877,9 +893,9 @@ con.execute("""
         / NULLIF(ch.total_6_to_17_years, 0)
       ) * 100, 2) AS pct_6_17_likely_needs_afterschool_care,
 
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       -- Grandparent caregivers (all ages)
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       gp.total_grandparent_householder_responsible_for_own_grandchildren_under_18_years AS grandparent_caregiver_households
 
     FROM fact_age_of_own_children_under_18_years_in_families_and_subfamilies_by_living_arrangements_by_employment_status_of_parents_town AS ch
@@ -890,13 +906,13 @@ con.execute("""
     ORDER BY town, year;
 
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 14: Transportation Access & Commute Burden
     -- Mode share, average commute time, and vehicle access by town
     -- Source: fact_means_of_transportation_to_work_town,
     --         fact_aggregate_travel_time_to_work_in_minutes_of_workers_by_means_of_transportation_to_work_town,
     --         fact_household_size_by_vehicles_available_town
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_transportation_access;
     CREATE TABLE main.agg_town_transportation_access AS
     SELECT
@@ -925,14 +941,14 @@ con.execute("""
     ORDER BY town, year;
 
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 15: Infrastructure Accessibility
     -- Rates of car ownership, internet access, and healthcare coverage
     -- Sources: fact_tenure_town, fact_tenure_by_vehicles_available_town,
     --          fact_presence_and_types_of_internet_subscriptions_in_household_town,
     --          fact_health_insurance_coverage_status_and_type_by_employment_status_town,
     --          fact_types_of_health_insurance_coverage_by_age_town
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.analytics_infrastructure_accesibility;
     CREATE TABLE main.analytics_infrastructure_accesibility AS
     SELECT
@@ -958,10 +974,10 @@ con.execute("""
     ORDER BY town, year;
 
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 16: Town Financial Hardship (ALICE)
     -- Tracks the proportion of households living in poverty or as ALICE
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_alice_household;
     CREATE TABLE main.agg_town_alice_household AS
     SELECT
@@ -978,10 +994,10 @@ con.execute("""
     ORDER BY town, year;
 
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 17: County Financial Hardship (ALICE)
     -- Macro-level tracking of financial hardship across the entire county
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_county_alice_household;
     CREATE TABLE main.agg_county_alice_household AS
     SELECT
@@ -997,10 +1013,10 @@ con.execute("""
     ORDER BY county, year;
 
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 18: Town Home Value Trends
     -- show home value data by town, housing type, and date acquired from zillow
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_home_value_trends;
     CREATE TABLE main.agg_town_home_value_trends AS
     SELECT
@@ -1019,10 +1035,10 @@ con.execute("""
       town, housing_type, date;
 
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 19: Town Rent Trends
     -- show rent data by town and date acquired from zillow
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_rent_trends;
     CREATE TABLE main.agg_town_rent_trends AS
     SELECT
@@ -1040,10 +1056,10 @@ con.execute("""
       town, date;
 
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 20: Zillow Market Affordability Index
     -- show affordability of the zillow market with a combination of census data
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.zillow_market_affordability_index;
     CREATE TABLE main.zillow_market_affordability_index AS
     WITH avg_home_values AS (
@@ -1080,12 +1096,12 @@ con.execute("""
     ORDER BY
       town, year;
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 21: Town Educational Attainment by Age, Race, and Earnings (S1501)
     -- Source: fact_educational_attainment_town (S1501 subject table — place level only)
     -- Includes: population counts + percent by age group, race/ethnicity,
     --           median earnings by education level, and poverty rate by education level
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_educational_attainment_s1501;
     CREATE TABLE main.agg_town_educational_attainment_s1501 AS
     SELECT
@@ -1093,9 +1109,9 @@ con.execute("""
       t.town_name AS town,
       ed.year_key AS year,
 
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       -- 1. Population 18-24 by Educational Attainment (counts)
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       ed.total_age_by_educational_attainment_population_18_to_24_years AS pop_18_24,
       ed.total_age_by_educational_attainment_population_18_to_24_years_less_than_high_school_graduate AS pop_18_24_less_than_hs,
       ed.total_age_by_educational_attainment_population_18_to_24_years_high_school_graduate_includes_equivalency AS pop_18_24_hs_grad,
@@ -1105,9 +1121,9 @@ con.execute("""
       -- Percent 18-24 (from C02)
       ed.percent_age_by_educational_attainment_population_25_years_and_over AS pct_25_plus_hs_grad_or_higher,
 
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       -- 2. Population 25+ by Age Group (counts + hs/bachelors rates)
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       ed.total_age_by_educational_attainment_population_25_to_34_years AS pop_25_34,
       ed.total_age_by_educational_attainment_population_25_to_34_years_high_school_graduate_or_higher AS pop_25_34_hs_grad_plus,
       ed.total_age_by_educational_attainment_population_25_to_34_years_bachelor_s_degree_or_higher AS pop_25_34_bachelors_plus,
@@ -1128,11 +1144,11 @@ con.execute("""
       ed.percent_age_by_educational_attainment_population_65_years_and_over_high_school_graduate_or_higher AS pct_65_plus_hs_grad_plus,
       ed.percent_age_by_educational_attainment_population_65_years_and_over_bachelor_s_degree_or_higher AS pct_65_plus_bachelors_plus,
 
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       -- 3. Race/Ethnicity by Educational Attainment (counts + rates)
       -- For equity analysis — compare attainment across racial groups
       -- Note: Hispanic/Latino is ethnicity not race (can overlap with race categories)
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       ed.total_race_and_hispanic_or_latino_origin_by_educational_attainment_white_alone_not_hispanic_or_latino AS pop_white_non_hispanic,
       ed.total_race_and_hispanic_or_latino_origin_by_educational_attainment_white_alone_not_hispanic_or_latino_high_school_graduate_or_higher AS pop_white_non_hispanic_hs_plus,
       ed.total_race_and_hispanic_or_latino_origin_by_educational_attainment_white_alone_not_hispanic_or_latino_bachelor_s_degree_or_higher AS pop_white_non_hispanic_bachelors_plus,
@@ -1161,10 +1177,10 @@ con.execute("""
       ed.total_race_and_hispanic_or_latino_origin_by_educational_attainment_two_or_more_races_high_school_graduate_or_higher AS pop_two_or_more_races_hs_plus,
       ed.total_race_and_hispanic_or_latino_origin_by_educational_attainment_two_or_more_races_bachelor_s_degree_or_higher AS pop_two_or_more_races_bachelors_plus,
 
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       -- 4. Median Earnings by Education Level
       -- Economic return on education — key for economic mobility analysis
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       ed.total_median_earnings_in_the_past_12_months_in_2024_inflation_adjusted_dollars_population_25_years_and_over_with_earnings AS median_earnings_all,
       ed.total_median_earnings_in_the_past_12_months_in_2024_inflation_adjusted_dollars_population_25_years_and_over_with_earnings_less_than_high_school_graduate AS median_earnings_less_than_hs,
       ed.total_median_earnings_in_the_past_12_months_in_2024_inflation_adjusted_dollars_population_25_years_and_over_with_earnings_high_school_graduate_includes_equivalency AS median_earnings_hs_grad,
@@ -1172,10 +1188,10 @@ con.execute("""
       ed.total_median_earnings_in_the_past_12_months_in_2024_inflation_adjusted_dollars_population_25_years_and_over_with_earnings_bachelor_s_degree AS median_earnings_bachelors,
       ed.total_median_earnings_in_the_past_12_months_in_2024_inflation_adjusted_dollars_population_25_years_and_over_with_earnings_graduate_or_professional_degree AS median_earnings_graduate,
 
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       -- 5. Poverty Rate by Education Level
       -- Shows intersection of education and economic hardship
-      -- -----------------------------------------------------
+      -- ------------------------------------------------------------------------------
       ed.total_poverty_rate_for_the_population_25_years_and_over_for_whom_poverty_status_is_determined_by_educational_attainment_level_less_than_high_school_graduate AS poverty_count_less_than_hs,
       ed.total_poverty_rate_for_the_population_25_years_and_over_for_whom_poverty_status_is_determined_by_educational_attainment_level_high_school_graduate_includes_equivalency AS poverty_count_hs_grad,
       ed.total_poverty_rate_for_the_population_25_years_and_over_for_whom_poverty_status_is_determined_by_educational_attainment_level_some_college_or_associate_s_degree AS poverty_count_some_college,
@@ -1189,10 +1205,10 @@ con.execute("""
     ORDER BY town, year;
             
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 22: MH/SU Facility Count Summary by County and Type
     -- Counts of facilities by county x facility type for access analysis
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_mhsu_facility_summary;
     CREATE TABLE main.agg_mhsu_facility_summary AS
     SELECT
@@ -1206,10 +1222,10 @@ con.execute("""
     GROUP BY county, state, facility_type_label, type_facility, is_mecklenburg
     ORDER BY is_mecklenburg DESC, county, facility_type_label;
  
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 23: MH/SU Facilities Detail
     -- Full facility list with location for map visualization
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_mhsu_facility_detail;
     CREATE TABLE main.agg_mhsu_facility_detail AS
     SELECT
@@ -1230,58 +1246,58 @@ con.execute("""
     FROM fact_mh_su_facilities
     ORDER BY is_mecklenburg DESC, county, facility_name;
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 24: CDC PLACES Health Outcomes by Town
     -- arthritis_ageadjprv, bphigh_ageadjprv, cancer_ageadjprv, etc.
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_cdc_health_outcomes;
     CREATE TABLE main.agg_town_cdc_health_outcomes AS
     SELECT * FROM fact_health_outcomes_town ORDER BY town_name, year_key;
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 25: CDC PLACES Health Status by Town
     -- ghlth_ageadjprv, mhlth_ageadjprv, phlth_ageadjprv, etc.
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_cdc_health_status;
     CREATE TABLE main.agg_town_cdc_health_status AS
     SELECT * FROM fact_health_status_town ORDER BY town_name, year_key;
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 26: CDC PLACES Prevention by Town
     -- checkup_ageadjprv, dental_ageadjprv, mammouse_ageadjprv, etc.
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_cdc_prevention;
     CREATE TABLE main.agg_town_cdc_prevention AS
     SELECT * FROM fact_prevention_town ORDER BY town_name, year_key;
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 27: CDC PLACES Disability by Town
     -- disability_ageadjprv, cognition_ageadjprv, mobility_ageadjprv, etc.
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_cdc_disability;
     CREATE TABLE main.agg_town_cdc_disability AS
     SELECT * FROM fact_disability_town ORDER BY town_name, year_key;
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 28: CDC PLACES Health Risk Behaviors by Town
     -- binge_ageadjprv, csmoking_ageadjprv, lpa_ageadjprv, sleep_ageadjprv, etc.
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_cdc_risk_behaviors;
     CREATE TABLE main.agg_town_cdc_risk_behaviors AS
     SELECT * FROM fact_risk_behaviors_town ORDER BY town_name, year_key;
 
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 29: CDC PLACES Health-Related Social Needs by Town
     -- loneliness_ageadjprv, foodinsecu_ageadjprv, housinsecu_ageadjprv, etc.
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_town_cdc_social_needs;
     CREATE TABLE main.agg_town_cdc_social_needs AS
     SELECT * FROM fact_social_needs_town ORDER BY town_name, year_key;
             
     
-    -- --------------------------------------------------------------
+    -- ------------------------------------------------------------------------------
     -- Aggregation 30: Fair Market Rent by region / year / bedroom
-    -- --------------------------------------------------------------
+    -- ------------------------------------------------------------------------------
     DROP TABLE IF EXISTS main.agg_charlotte_fair_market_rent;
     CREATE TABLE main.agg_charlotte_fair_market_rent AS
     SELECT
@@ -1295,7 +1311,7 @@ con.execute("""
     JOIN gold.dim_bedrooms AS b ON f.bedroom_key = b.bedroom_key
     ORDER BY r.region_name, f.year_key, b.assumed_household_size;
  
-    -- --------------------------------------------------------------
+    -- ------------------------------------------------------------------------------
     -- Aggregation 31: AMI Affordability Gap
     -- fmr is deliberately NOT stored on gold.fact_ami_affordability_gap
     -- (it duplicated fact_fair_market_rent exactly) -- LEFT JOIN it back
@@ -1303,7 +1319,7 @@ con.execute("""
     -- LEFT JOIN (not INNER) so a future region/year/bedroom gap in
     -- fact_fair_market_rent shows up as NULL fmr instead of silently
     -- dropping the whole affordability-gap row.
-    -- --------------------------------------------------------------
+    -- ------------------------------------------------------------------------------
     DROP TABLE IF EXISTS main.agg_charlotte_ami_affordability_gap;
     CREATE TABLE main.agg_charlotte_ami_affordability_gap AS
     SELECT
@@ -1328,9 +1344,9 @@ con.execute("""
        AND fmr.bedroom_key = a.bedroom_key
     ORDER BY r.region_name, b.assumed_household_size, l.ami_pct;
  
-    -- --------------------------------------------------------------
+    -- ------------------------------------------------------------------------------
     -- Aggregation 32: Occupation Housing Wage
-    -- --------------------------------------------------------------
+    -- ------------------------------------------------------------------------------
     DROP TABLE IF EXISTS main.agg_charlotte_occupation_housing_wage;
     CREATE TABLE main.agg_charlotte_occupation_housing_wage AS
     SELECT
@@ -1345,9 +1361,358 @@ con.execute("""
     JOIN gold.dim_occupation AS o ON w.occupation_key = o.occupation_key
     ORDER BY r.region_name, o.category, o.occupation_name;
 
-    -- ==========================================
+
+    -- ------------------------------------------------------------------------------
+    -- Aggregation 33: Neighborhood Block geo
+    -- ------------------------------------------------------------------------------
+    DROP TABLE IF EXISTS main.agg_neighborhood_blocks;
+    CREATE TABLE main.agg_neighborhood_blocks AS
+    WITH neighborhood_map AS (
+        SELECT block_GEOID, 'Huntington Green' AS neighborhood_name
+        FROM (VALUES
+            ('371190062241066'), ('371190062241097'), ('371190062241098'), ('371190062241099'),
+            ('371190062241100'), ('371190062241073'), ('371190062241074'), ('371190062241075'),
+            ('371190062241076'), ('371190062241072'), ('371190062241071'), ('371190062241070'),
+            ('371190062241069'), ('371190062241063'), ('371190062241064'), ('371190062241065')
+        ) t(block_GEOID)
+        UNION ALL
+        SELECT block_GEOID, 'Pottstown'
+        FROM (VALUES
+            ('371190063071064'), ('371190063071076'), ('371190063071077'), ('371190063071079'),
+            ('371190063072022'), ('371190063072021'), ('371190063072020')
+        ) t(block_GEOID)
+        UNION ALL
+        SELECT block_GEOID, 'West Davidson'
+        FROM (VALUES
+            ('371190064031030'), ('371190064031031'), ('371190064031032'), ('371190064031033'),
+            ('371190064031034'), ('371190064031035'), ('371190064031036'), ('371190064031037')
+        ) t(block_GEOID)
+        UNION ALL
+        SELECT block_GEOID, 'Smithville'
+        FROM (VALUES
+            ('371190064111011'), ('371190064111012')
+        ) t(block_GEOID)
+        UNION ALL
+        SELECT block_GEOID, 'East Catawba'
+        FROM (VALUES
+           ('371190064082030'), ('371190064082032'), ('371190064111005'), ('371190064082023'),
+          ('371190064091094'), ('371190064111002'), ('371190064082024'), ('371190064091093'),
+          ('371190064111016'), ('371190064091097'), ('371190064111003'), ('371190064112001'),
+          ('371190064091092'), ('371190064082031'), ('371190064111004'), ('371190064082035'),
+          ('371190064082029'), ('371190064102006'), ('371190064111009'), ('371190064111006'),
+          ('371190064111014'), ('371190064111008'), ('371190064111001'), ('371190064112000'),
+          ('371190064091095'), ('371190064111020'), ('371190064111007'), ('371190064082033'),
+          ('371190064082034'), ('371190064111000'), ('371190064111015'), ('371190064111013')
+        ) t(block_GEOID)
+    )
+    SELECT
+        nm.neighborhood_name,
+        nm.block_GEOID,
+        b.block_name,
+        b.geometry
+    FROM neighborhood_map AS nm
+    JOIN gold.dim_block AS b ON nm.block_GEOID = b.block_GEOID
+    ORDER BY nm.neighborhood_name, nm.block_GEOID;
+            
+   LOAD spatial;
+ 
+    -- Finer boundary: unions individual blocks (33 total). More precise
+    -- fit to the real neighborhood edge than the block-group version above.
+    DROP TABLE IF EXISTS main.agg_neighborhood_geometry_block;
+    CREATE TABLE main.agg_neighborhood_geometry_block AS
+    SELECT
+        neighborhood_name,
+        ST_AsGeoJSON(ST_Union_Agg(ST_GeomFromGeoJSON(geometry))) AS geometry
+    FROM main.agg_neighborhood_blocks
+    GROUP BY neighborhood_name;
+ 
+            
+      -- ==============================================================================
+    -- PART 1: The team's 6 original CSV formats (enriched with
+    -- town_name/is_title_1, plus Reading/Math growth and the extra HS
+    -- indicator columns that were sitting unused in the same fact rows)
+    -- ==============================================================================
+ 
+    -- Aggregate 1: agg_school_proficiency (reproduces proficiency.csv)
+    DROP TABLE IF EXISTS main.agg_school_proficiency;
+    CREATE TABLE main.agg_school_proficiency AS
+    SELECT
+        ds.school_name AS school,
+        ds.grade_span,
+        ds.town_name,
+        ds.is_title_1,
+        f.glp_pct AS glp,
+        f.glp_raw,
+        f.ccr_pct AS ccr,
+        f.ccr_raw
+    FROM v_gold_fact_school_test_results AS f
+    JOIN gold.dim_school AS ds ON f.school_code = ds.school_code
+    WHERE f.subgroup_code = 'ALL' AND f.grade_scope = 'All'
+    ORDER BY school;
+ 
+    -- Aggregate 2: agg_school_ccr (reproduces ccr.csv)
+    DROP TABLE IF EXISTS main.agg_school_ccr;
+    CREATE TABLE main.agg_school_ccr AS
+    SELECT
+        ds.school_name AS school,
+        ds.grade_span,
+        ds.town_name,
+        ds.is_title_1,
+        f.glp_pct AS glp,
+        f.glp_raw,
+        f.ccr_pct AS ccr,
+        f.ccr_raw
+    FROM v_gold_fact_school_test_results AS f
+    JOIN gold.dim_school AS ds ON f.school_code = ds.school_code
+    WHERE f.subgroup_code = 'ALL' AND f.grade_scope = '9-12'
+    ORDER BY school;
+ 
+    -- Aggregate 3: agg_school_economic_gap (reproduces econ_gap.csv)
+    DROP TABLE IF EXISTS main.agg_school_economic_gap;
+    CREATE TABLE main.agg_school_economic_gap AS
+    SELECT
+        ds.school_name AS school,
+        ds.town_name,
+        ds.is_title_1,
+        MAX(CASE WHEN f.subgroup_code = 'EDS'  THEN f.glp_pct END) AS econ_disadv,
+        MAX(CASE WHEN f.subgroup_code = 'NEDS' THEN f.glp_pct END) AS not_disadv,
+        ROUND(
+            MAX(CASE WHEN f.subgroup_code = 'NEDS' THEN f.glp_pct END)
+          - MAX(CASE WHEN f.subgroup_code = 'EDS'  THEN f.glp_pct END)
+        , 1) AS gap
+    FROM v_gold_fact_school_test_results AS f
+    JOIN gold.dim_school AS ds ON f.school_code = ds.school_code
+    WHERE f.subgroup_code IN ('EDS', 'NEDS') AND f.grade_scope = 'All'
+    GROUP BY ds.school_name, ds.town_name, ds.is_title_1
+    HAVING MAX(CASE WHEN f.subgroup_code = 'EDS'  THEN f.glp_pct END) IS NOT NULL
+       AND MAX(CASE WHEN f.subgroup_code = 'NEDS' THEN f.glp_pct END) IS NOT NULL
+    ORDER BY school;
+ 
+    -- Aggregate 4: agg_school_hs_economic_gap (reproduces hs_econ_gap.csv)
+    DROP TABLE IF EXISTS main.agg_school_hs_economic_gap;
+    CREATE TABLE main.agg_school_hs_economic_gap AS
+    SELECT
+        ds.school_name AS school,
+        ds.town_name,
+        ds.is_title_1,
+        MAX(CASE WHEN f.subgroup_code = 'EDS'  THEN f.glp_pct END) AS econ_disadv,
+        MAX(CASE WHEN f.subgroup_code = 'NEDS' THEN f.glp_pct END) AS not_disadv,
+        ROUND(
+            MAX(CASE WHEN f.subgroup_code = 'NEDS' THEN f.glp_pct END)
+          - MAX(CASE WHEN f.subgroup_code = 'EDS'  THEN f.glp_pct END)
+        , 1) AS gap
+    FROM v_gold_fact_school_test_results AS f
+    JOIN gold.dim_school AS ds ON f.school_code = ds.school_code
+    WHERE f.subgroup_code IN ('EDS', 'NEDS') AND f.grade_scope = '9-12'
+    GROUP BY ds.school_name, ds.town_name, ds.is_title_1
+    HAVING MAX(CASE WHEN f.subgroup_code = 'EDS'  THEN f.glp_pct END) IS NOT NULL
+       AND MAX(CASE WHEN f.subgroup_code = 'NEDS' THEN f.glp_pct END) IS NOT NULL
+    ORDER BY school;
+ 
+    -- Aggregate 5: agg_school_growth (reproduces growth.csv)
+    DROP TABLE IF EXISTS main.agg_school_growth;
+    CREATE TABLE main.agg_school_growth AS
+    SELECT
+        ds.school_name AS school,
+        ds.grade_span,
+        ds.town_name,
+        ds.is_title_1,
+        o.growth_status AS status,
+        o.growth_index_score AS index_score,
+        r.growth_status AS reading_growth_status,
+        r.growth_index_score AS reading_growth_index,
+        m.growth_status AS math_growth_status,
+        m.growth_index_score AS math_growth_index
+    FROM v_gold_fact_school_growth AS o
+    JOIN gold.dim_school AS ds ON o.school_code = ds.school_code
+    LEFT JOIN v_gold_fact_school_growth AS r
+        ON o.school_code = r.school_code AND r.subgroup_code = 'ALL' AND r.growth_type = 'Reading'
+    LEFT JOIN v_gold_fact_school_growth AS m
+        ON o.school_code = m.school_code AND m.subgroup_code = 'ALL' AND m.growth_type = 'Mathematics'
+    WHERE o.subgroup_code = 'ALL' AND o.growth_type = 'Overall'
+    ORDER BY school;
+ 
+    -- Aggregate 6: agg_school_graduation (reproduces graduation.csv)
+    DROP TABLE IF EXISTS main.agg_school_graduation;
+    CREATE TABLE main.agg_school_graduation AS
+    SELECT
+        ds.school_name AS school,
+        ds.town_name,
+        ds.is_title_1,
+        f.grad_4yr_pct AS grad_4yr,
+        f.grad_4yr_raw,
+        (TRY_CAST(f.grad_4yr_raw AS DOUBLE) IS NULL) AS suppressed,
+        f.grad_5yr_pct AS grad_5yr,
+        f.grad_5yr_raw,
+        f.act_workkeys_indicator_pct,
+        f.act_workkeys_indicator_raw,
+        f.passing_math3_pct,
+        f.passing_math3_raw
+    FROM v_gold_fact_school_hs_indicators AS f
+    JOIN gold.dim_school AS ds ON f.school_code = ds.school_code
+    WHERE f.subgroup_code = 'ALL' AND f.grad_4yr_raw IS NOT NULL
+    ORDER BY school;
+ 
+    -- ==============================================================================
+    -- PART 2: Additional analysis tables (equity gaps, town rollup,
+    -- college readiness, scorecard)
+    -- ==============================================================================
+ 
+    -- Aggregate 7: agg_school_race_gap (long format vs White)
+    DROP TABLE IF EXISTS main.agg_school_race_gap;
+    CREATE TABLE main.agg_school_race_gap AS
+    WITH white_scores AS (
+        SELECT school_code, glp_pct AS white_pct
+        FROM v_gold_fact_school_test_results
+        WHERE subgroup_code = 'WHTE' AND grade_scope = 'All'
+    ),
+    comparison_scores AS (
+        SELECT school_code, subgroup_code, glp_pct AS comparison_pct
+        FROM v_gold_fact_school_test_results
+        WHERE subgroup_code IN ('BLCK', 'HISP', 'ASIA', 'AMIN', 'MULT') AND grade_scope = 'All'
+    )
+    SELECT
+        ds.school_name AS school,
+        dsg.subgroup_label AS comparison_group,
+        w.white_pct,
+        c.comparison_pct,
+        ROUND(w.white_pct - c.comparison_pct, 1) AS gap
+    FROM comparison_scores AS c
+    JOIN white_scores AS w ON c.school_code = w.school_code
+    JOIN gold.dim_school AS ds ON c.school_code = ds.school_code
+    JOIN gold.dim_subgroup AS dsg ON c.subgroup_code = dsg.subgroup_code
+    ORDER BY school, comparison_group;
+ 
+    -- Aggregate 8: agg_school_disability_gap
+    DROP TABLE IF EXISTS main.agg_school_disability_gap;
+    CREATE TABLE main.agg_school_disability_gap AS
+    SELECT
+        ds.school_name AS school,
+        MAX(CASE WHEN f.subgroup_code = 'SWD'  THEN f.glp_pct END) AS swd_pct,
+        MAX(CASE WHEN f.subgroup_code = 'NSWD' THEN f.glp_pct END) AS nswd_pct,
+        ROUND(
+            MAX(CASE WHEN f.subgroup_code = 'NSWD' THEN f.glp_pct END)
+          - MAX(CASE WHEN f.subgroup_code = 'SWD'  THEN f.glp_pct END)
+        , 1) AS gap
+    FROM v_gold_fact_school_test_results AS f
+    JOIN gold.dim_school AS ds ON f.school_code = ds.school_code
+    WHERE f.subgroup_code IN ('SWD', 'NSWD') AND f.grade_scope = 'All'
+    GROUP BY ds.school_name
+    HAVING MAX(CASE WHEN f.subgroup_code = 'SWD'  THEN f.glp_pct END) IS NOT NULL
+       AND MAX(CASE WHEN f.subgroup_code = 'NSWD' THEN f.glp_pct END) IS NOT NULL
+    ORDER BY school;
+ 
+    -- Aggregate 9: agg_town_school_summary (first use of dim_school.town_name)
+    DROP TABLE IF EXISTS main.agg_town_school_summary;
+    CREATE TABLE main.agg_town_school_summary AS
+    SELECT
+        ds.town_name,
+        COUNT(DISTINCT ds.school_code) AS num_schools,
+        ROUND(AVG(f.glp_pct), 1) AS avg_glp,
+        ROUND(AVG(f.ccr_pct), 1) AS avg_ccr
+    FROM v_gold_fact_school_test_results AS f
+    JOIN gold.dim_school AS ds ON f.school_code = ds.school_code
+    WHERE f.subgroup_code = 'ALL' AND f.grade_scope = 'All'
+    GROUP BY ds.town_name
+    ORDER BY ds.town_name;
+ 
+    -- Aggregate 10: agg_school_college_readiness (CCR + ACT + WorkKeys combined)
+    DROP TABLE IF EXISTS main.agg_school_college_readiness;
+    CREATE TABLE main.agg_school_college_readiness AS
+    SELECT
+        ds.school_name AS school,
+        t.ccr_pct,
+        a.pct_meeting_benchmark AS act_composite_pct,
+        w.pct_silver_or_higher AS workkeys_silver_pct
+    FROM (
+        SELECT DISTINCT school_code FROM v_gold_fact_school_test_results WHERE grade_scope = '9-12'
+    ) AS schools
+    JOIN gold.dim_school AS ds ON schools.school_code = ds.school_code
+    LEFT JOIN v_gold_fact_school_test_results AS t
+        ON schools.school_code = t.school_code AND t.subgroup_code = 'ALL' AND t.grade_scope = '9-12'
+    LEFT JOIN v_gold_fact_school_act AS a
+        ON schools.school_code = a.school_code AND a.subgroup_code = 'ALL' AND a.act_measure = 'ACT composite score of 17 or higher'
+    LEFT JOIN v_gold_fact_school_workkeys AS w
+        ON schools.school_code = w.school_code AND w.subgroup_code = 'ALL'
+    ORDER BY school;
+ 
+    -- Aggregate 11: agg_school_scorecard (wide one-row-per-school overview)
+    DROP TABLE IF EXISTS main.agg_school_scorecard;
+    CREATE TABLE main.agg_school_scorecard AS
+    SELECT
+        ds.school_name AS school,
+        ds.town_name,
+        ds.grade_span,
+        ds.is_title_1,
+        p.glp_pct AS glp,
+        p.ccr_pct AS ccr,
+        g.growth_status,
+        g.growth_index_score,
+        h.grad_4yr_pct
+    FROM gold.dim_school AS ds
+    LEFT JOIN v_gold_fact_school_test_results AS p
+        ON ds.school_code = p.school_code AND p.subgroup_code = 'ALL' AND p.grade_scope = 'All'
+    LEFT JOIN v_gold_fact_school_growth AS g
+        ON ds.school_code = g.school_code AND g.subgroup_code = 'ALL' AND g.growth_type = 'Overall'
+    LEFT JOIN v_gold_fact_school_hs_indicators AS h
+        ON ds.school_code = h.school_code AND h.subgroup_code = 'ALL'
+    ORDER BY school;
+ 
+    -- ==============================================================================
+    -- PART 3: Tables from the 3 previously-unused fact tables
+    -- ==============================================================================
+ 
+    -- Aggregate 12: agg_school_subject_proficiency (with sample sizes)
+    DROP TABLE IF EXISTS main.agg_school_subject_proficiency;
+    CREATE TABLE main.agg_school_subject_proficiency AS
+    SELECT
+        ds.school_name AS school,
+        ds.town_name,
+        rd.glp_pct AS reading_glp, rd.ccr_pct AS reading_ccr, rd.denominator AS reading_n,
+        ma.glp_pct AS math_glp,    ma.ccr_pct AS math_ccr,    ma.denominator AS math_n,
+        sc.glp_pct AS science_glp, sc.ccr_pct AS science_ccr, sc.denominator AS science_n,
+        eo.glp_pct AS eoc_glp,     eo.ccr_pct AS eoc_ccr,     eo.denominator AS eoc_n
+    FROM gold.dim_school AS ds
+    LEFT JOIN v_gold_fact_school_assessment_master AS rd ON ds.school_code = rd.school_code AND rd.subgroup_code = 'ALL' AND rd.subject_code = 'RDGS'
+    LEFT JOIN v_gold_fact_school_assessment_master AS ma ON ds.school_code = ma.school_code AND ma.subgroup_code = 'ALL' AND ma.subject_code = 'MAGS'
+    LEFT JOIN v_gold_fact_school_assessment_master AS sc ON ds.school_code = sc.school_code AND sc.subgroup_code = 'ALL' AND sc.subject_code = 'SCGS'
+    LEFT JOIN v_gold_fact_school_assessment_master AS eo ON ds.school_code = eo.school_code AND eo.subgroup_code = 'ALL' AND eo.subject_code = 'EOC'
+    ORDER BY school;
+ 
+    -- Aggregate 13: agg_school_grade_level_proficiency (finest-grain breakdown)
+    DROP TABLE IF EXISTS main.agg_school_grade_level_proficiency;
+    CREATE TABLE main.agg_school_grade_level_proficiency AS
+    SELECT
+        ds.school_name AS school,
+        ds.town_name,
+        f.subject_area,
+        f.grade_scope,
+        f.glp_pct AS glp,
+        f.ccr_pct AS ccr
+    FROM v_gold_fact_school_eog_eoc AS f
+    JOIN gold.dim_school AS ds ON f.school_code = ds.school_code
+    WHERE f.subgroup_code = 'ALL'
+    ORDER BY school, subject_area, grade_scope;
+ 
+    -- Aggregate 14: agg_school_english_learner_progress
+    DROP TABLE IF EXISTS main.agg_school_english_learner_progress;
+    CREATE TABLE main.agg_school_english_learner_progress AS
+    SELECT
+        ds.school_name AS school,
+        ds.town_name,
+        f.total_el_progress_pct,
+        f.pct_exiting_el_status,
+        f.pct_meeting_annual_progress
+    FROM v_gold_fact_school_english_learner AS f
+    JOIN gold.dim_school AS ds ON f.school_code = ds.school_code
+    WHERE f.subgroup_code = 'ELS'
+    ORDER BY school;
+ 
+
+            
+    -- ==============================================================================
     -- Post-processing Cleanup
-    -- ==========================================
+    -- ==============================================================================
     DROP VIEW IF EXISTS main.dim_bg;
     DROP VIEW IF EXISTS main.dim_date;
     DROP VIEW IF EXISTS main.dim_town;
@@ -1401,6 +1766,16 @@ con.execute("""
     DROP VIEW IF EXISTS v_gold_fact_fair_market_rent;
     DROP VIEW IF EXISTS v_gold_fact_ami_affordability_gap;
     DROP VIEW IF EXISTS v_gold_fact_occupation_housing_wage;
+    DROP VIEW IF EXISTS v_gold_cdc_places;
+    DROP VIEW IF EXISTS main.dim_block;
+    DROP VIEW IF EXISTS v_gold_fact_school_test_results;
+    DROP VIEW IF EXISTS v_gold_fact_school_growth;
+    DROP VIEW IF EXISTS v_gold_fact_school_hs_indicators;
+    DROP VIEW IF EXISTS v_gold_fact_school_assessment_master;
+    DROP VIEW IF EXISTS v_gold_fact_school_eog_eoc;
+    DROP VIEW IF EXISTS v_gold_fact_school_act;
+    DROP VIEW IF EXISTS v_gold_fact_school_workkeys;
+    DROP VIEW IF EXISTS v_gold_fact_school_english_learner;
  
 
    

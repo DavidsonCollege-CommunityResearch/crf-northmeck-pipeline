@@ -9,16 +9,26 @@
 #   - Pottstown         (block groups: 371190063071, 371190063072)
 #   - West Davidson     (block group: 371190064031)
 #   - Smithville        (block group: 371190064111)
+#   - East Catawba      (block groups: 371190064082, 371190064091, 371190064102, 371190064111, 371190064112)
+#     UPDATED: replaced with the 5 block groups actually verified via a
+#     stakeholder-provided boundary map, matched block-by-block against
+#     TIGER 2020 Census Blocks (see agg_neighborhood_blocks). The 3
+#     block groups previously hardcoded here (371190064061, 371190064062,
+#     371190064051) did not correspond to the real East Catawba boundary
+#     at all -- 0 overlap when checked against the verified blocks.
 #
-# IMPORTANT LIMITATION:
-#   ACS data is only available at the block group level, which is the smallest
-#   geographic unit published. These block groups approximate but do not
-#   perfectly align with neighborhood boundaries — each block group may include
-#   residents outside the neighborhood boundary.
-#   Pottstown spans 2 block groups and therefore carries greater boundary
-#   imprecision than the other three neighborhoods.
-#   All tables include a 'disclaimer' column to surface this limitation
-#   in downstream dashboards and reports.
+#     KNOWN CONFLICT: block group 371190064111 is claimed by BOTH
+#     Smithville (its full boundary) and East Catawba (15 of its blocks,
+#     verified). At the block-group level used throughout this file,
+#     that means Smithville's and East Catawba's numbers for this
+#     specific area OVERLAP -- summing or comparing totals across both
+#     neighborhoods will double-count that population. This is not a
+#     bug in the code; it's a real consequence of using whole block
+#     groups to approximate two neighborhoods whose actual boundaries
+#     (per the stakeholder map) split that same block group between them.
+#     Flagged here rather than silently resolved -- decide whether to
+#     exclude 371190064111 from one of the two neighborhoods, or accept
+#     the overlap with a documented caveat.
 # ==============================================================================
  
 import os
@@ -31,9 +41,9 @@ con = get_md_connection()
 print("\nStarting Neighborhood Aggregate Layer...")
  
 con.execute("""
-    -- ============================================================
+    -- ==============================================================================
     -- Expose Gold _bg fact tables as views for easier querying
-    -- ============================================================
+    -- ==============================================================================
     -- Note: B18101 (Sex by Age by Disability Status) is NOT available at block group level
     -- Census only publishes disability data at census tract level and above
     -- B18101_001/002/021 (total/male/female) are also null at block group level
@@ -62,12 +72,12 @@ con.execute("""
     CREATE OR REPLACE VIEW fact_age_of_own_children_under_18_years_in_families_and_subfamilies_by_living_arrangements_by_employment_status_of_parents_bg AS SELECT * FROM gold.fact_age_of_own_children_under_18_years_in_families_and_subfamilies_by_living_arrangements_by_employment_status_of_parents_bg;
     CREATE OR REPLACE VIEW fact_grandchildren_under_18_years_living_with_a_grandparent_householder_by_grandparent_responsibility_and_presence_of_parent_bg AS SELECT * FROM gold.fact_grandchildren_under_18_years_living_with_a_grandparent_householder_by_grandparent_responsibility_and_presence_of_parent_bg;
  
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 1: Neighborhood Demographics
     -- Note: total population from fact_total_population_bg (B01003)
     --       Sex breakdown not available at block group level
     --       B18101 disability data not available at block group level
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_neighborhood_demographics;
     CREATE TABLE main.agg_neighborhood_demographics AS
     WITH neighborhood_map AS (
@@ -84,8 +94,12 @@ con.execute("""
         FROM (VALUES ('371190064031')) t(block_group_GEOID)
         UNION ALL
         SELECT block_group_GEOID, 'Smithville',
-               'Note: block group approximation of neighborhood boundary'
+               'Note: block group approximation of neighborhood boundary. CONFLICT: block group 371190064111 overlaps with East Catawba (see file header) -- 15 of its blocks are stakeholder-verified as East Catawba.'
         FROM (VALUES ('371190064111')) t(block_group_GEOID)
+        UNION ALL
+        SELECT block_group_GEOID, 'East Catawba',
+               'Note: block group approximation of neighborhood boundary, now using the 5 block groups verified against a stakeholder-provided boundary map. CONFLICT: block group 371190064111 overlaps with Smithville (see file header).'
+        FROM (VALUES ('371190064082'), ('371190064091'), ('371190064102'), ('371190064111'), ('371190064112')) t(block_group_GEOID)
     )
     SELECT
       nm.neighborhood_name,
@@ -110,9 +124,9 @@ con.execute("""
       ON tp.block_group_GEOID = pb.block_group_GEOID AND tp.year_key = pb.year_key
     ORDER BY neighborhood_name, GEOID, year;
  
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 2: Neighborhood Economic Profile
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_neighborhood_economic_profile;
     CREATE TABLE main.agg_neighborhood_economic_profile AS
     WITH neighborhood_map AS (
@@ -123,6 +137,9 @@ con.execute("""
         SELECT block_group_GEOID, 'West Davidson' FROM (VALUES ('371190064031')) t(block_group_GEOID)
         UNION ALL
         SELECT block_group_GEOID, 'Smithville' FROM (VALUES ('371190064111')) t(block_group_GEOID)
+        UNION ALL
+        SELECT block_group_GEOID, 'East Catawba'
+        FROM (VALUES ('371190064082'), ('371190064091'), ('371190064102'), ('371190064111'), ('371190064112')) t(block_group_GEOID)
     )
     SELECT
       nm.neighborhood_name,
@@ -147,9 +164,9 @@ con.execute("""
       ON hi.block_group_GEOID = pv.block_group_GEOID AND hi.year_key = pv.year_key
     ORDER BY neighborhood_name, GEOID, year;
  
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 3: Neighborhood Housing Profile
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_neighborhood_housing;
     CREATE TABLE main.agg_neighborhood_housing AS
     WITH neighborhood_map AS (
@@ -160,6 +177,9 @@ con.execute("""
         SELECT block_group_GEOID, 'West Davidson' FROM (VALUES ('371190064031')) t(block_group_GEOID)
         UNION ALL
         SELECT block_group_GEOID, 'Smithville' FROM (VALUES ('371190064111')) t(block_group_GEOID)
+        UNION ALL
+        SELECT block_group_GEOID, 'East Catawba'
+        FROM (VALUES ('371190064082'), ('371190064091'), ('371190064102'), ('371190064111'), ('371190064112')) t(block_group_GEOID)
     )
     SELECT
       nm.neighborhood_name,
@@ -192,9 +212,9 @@ con.execute("""
     ORDER BY neighborhood_name, GEOID, year;
  
    
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 5: Neighborhood Education
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_neighborhood_education;
     CREATE TABLE main.agg_neighborhood_education AS
     WITH neighborhood_map AS (
@@ -205,6 +225,9 @@ con.execute("""
         SELECT block_group_GEOID, 'West Davidson' FROM (VALUES ('371190064031')) t(block_group_GEOID)
         UNION ALL
         SELECT block_group_GEOID, 'Smithville' FROM (VALUES ('371190064111')) t(block_group_GEOID)
+        UNION ALL
+        SELECT block_group_GEOID, 'East Catawba'
+        FROM (VALUES ('371190064082'), ('371190064091'), ('371190064102'), ('371190064111'), ('371190064112')) t(block_group_GEOID)
     )
     SELECT
       nm.neighborhood_name,
@@ -240,9 +263,9 @@ con.execute("""
       ON ed.block_group_GEOID = se.block_group_GEOID AND ed.year_key = se.year_key
     ORDER BY neighborhood_name, GEOID, year;
  
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 6: Neighborhood Transportation
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_neighborhood_transportation;
     CREATE TABLE main.agg_neighborhood_transportation AS
     WITH neighborhood_map AS (
@@ -253,6 +276,9 @@ con.execute("""
         SELECT block_group_GEOID, 'West Davidson' FROM (VALUES ('371190064031')) t(block_group_GEOID)
         UNION ALL
         SELECT block_group_GEOID, 'Smithville' FROM (VALUES ('371190064111')) t(block_group_GEOID)
+        UNION ALL
+        SELECT block_group_GEOID, 'East Catawba'
+        FROM (VALUES ('371190064082'), ('371190064091'), ('371190064102'), ('371190064111'), ('371190064112')) t(block_group_GEOID)
     )
     SELECT
       nm.neighborhood_name,
@@ -278,9 +304,9 @@ con.execute("""
       ON mt.block_group_GEOID = hv.block_group_GEOID AND mt.year_key = hv.year_key
     ORDER BY neighborhood_name, GEOID, year;
  
-    -- ==========================================
+    -- ==============================================================================
     -- Aggregation 7: Neighborhood Childcare & Family Structure
-    -- ==========================================
+    -- ==============================================================================
     DROP TABLE IF EXISTS main.agg_neighborhood_childcare;
     CREATE TABLE main.agg_neighborhood_childcare AS
     WITH neighborhood_map AS (
@@ -291,6 +317,9 @@ con.execute("""
         SELECT block_group_GEOID, 'West Davidson' FROM (VALUES ('371190064031')) t(block_group_GEOID)
         UNION ALL
         SELECT block_group_GEOID, 'Smithville' FROM (VALUES ('371190064111')) t(block_group_GEOID)
+        UNION ALL
+        SELECT block_group_GEOID, 'East Catawba'
+        FROM (VALUES ('371190064082'), ('371190064091'), ('371190064102'), ('371190064111'), ('371190064112')) t(block_group_GEOID)
     )
     SELECT
       nm.neighborhood_name,
@@ -327,10 +356,48 @@ con.execute("""
     JOIN fact_grandchildren_under_18_years_living_with_a_grandparent_householder_by_grandparent_responsibility_and_presence_of_parent_bg AS gp
       ON ch.block_group_GEOID = gp.block_group_GEOID AND ch.year_key = gp.year_key
     ORDER BY neighborhood_name, GEOID, year;
+            
+    -- ==============================================================================
+    -- Aggregation 8: Neighborhood geo data
+    -- ==============================================================================
+        LOAD spatial;
  
-    -- ==========================================
+    -- Same neighborhood -> block group mapping used elsewhere in
+    -- nmidw_neighborhood_aggregate.py. Pottstown spans 2 block groups, so
+    -- this is the one neighborhood where the union actually merges
+    -- anything; the other 3 are single block groups and just pass through.
+    -- East Catawba now spans 5 block groups (updated) -- its union merges
+    -- meaningfully too.
+    DROP TABLE IF EXISTS main.agg_neighborhood_blockgroup_geometry;
+    CREATE TABLE main.agg_neighborhood_blockgroup_geometry AS
+    WITH neighborhood_map AS (
+        SELECT block_group_GEOID, 'Huntington Green' AS neighborhood_name
+        FROM (VALUES ('371190062241')) t(block_group_GEOID)
+        UNION ALL
+        SELECT block_group_GEOID, 'Pottstown'
+        FROM (VALUES ('371190063071'), ('371190063072')) t(block_group_GEOID)
+        UNION ALL
+        SELECT block_group_GEOID, 'West Davidson'
+        FROM (VALUES ('371190064031')) t(block_group_GEOID)
+        UNION ALL
+        SELECT block_group_GEOID, 'Smithville'
+        FROM (VALUES ('371190064111')) t(block_group_GEOID)
+        UNION ALL
+        SELECT block_group_GEOID, 'East Catawba'
+        FROM (VALUES ('371190064082'), ('371190064091'), ('371190064102'), ('371190064111'), ('371190064112')) t(block_group_GEOID)
+    )
+    SELECT
+        nm.neighborhood_name,
+        ST_AsGeoJSON(ST_Union_Agg(ST_GeomFromGeoJSON(bg.geometry))) AS geometry
+    FROM neighborhood_map AS nm
+    JOIN gold.dim_bg AS bg ON nm.block_group_GEOID = bg.block_group_GEOID
+    GROUP BY nm.neighborhood_name;
+ 
+
+ 
+    -- ==============================================================================
     -- Post-processing Cleanup
-    -- ==========================================
+    -- ==============================================================================
     DROP VIEW IF EXISTS main.fact_total_population_bg;
     DROP VIEW IF EXISTS main.fact_race_bg;
     DROP VIEW IF EXISTS main.fact_hispanic_or_latino_origin_bg;
@@ -357,6 +424,6 @@ con.execute("""
  
     FORCE CHECKPOINT;
 """)
- 
+
 con.close()
 print("🎉 Complete: Neighborhood Aggregate Pipeline Successfully Executed!")

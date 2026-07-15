@@ -18,13 +18,13 @@ STATE_FIPS = "37"
 COUNTY_FIPS = "119"
 
 # ==============================================================================
-# STEP 1: BRONZE LAYER 
+# STEP 1: BRONZE LAYER
 # Objective: Create code that replicates the R tidycensus package's functionality to fetch ACS data and store it in a raw format in DuckDB./ Ingest raw data into data warehouse (Bronze Layer) using Polars and DuckDB.
 # ==============================================================================
 
-# --------------------------#
+# ------------------------------------------------------------------------------
 # Step 1: Defining variables
-# --------------------------#
+# ------------------------------------------------------------------------------
 
 acs_variables_raw = [
     # --- 0. Core Demographics ---
@@ -181,9 +181,9 @@ target_years = list(range(2018,2025))
 raw_bg = run_ingestion_pipeline(target_years, acs_variables_raw, "block group", CENSUS_API_KEY, STATE_FIPS, COUNTY_FIPS)
 raw_place = run_ingestion_pipeline(target_years, acs_variables_raw, "place", CENSUS_API_KEY, STATE_FIPS, COUNTY_FIPS)
 raw_meta = fetch_acs_metadata(target_years)
-# -----------------------------------#
+# ------------------------------------------------------------------------------
 # Step 3: Connecting to local DuckDB
-# -----------------------------------#
+# ------------------------------------------------------------------------------
 con = get_md_connection()
 con.execute("CREATE SCHEMA IF NOT EXISTS bronze;")
 
@@ -197,13 +197,13 @@ con.execute("CREATE OR REPLACE TABLE bronze.acs_metadata AS SELECT * FROM meta_v
 print("Successfully ingested raw ACS data into DuckDB Bronze layer.")
 
 # ==============================================================================
-# STEP 2: Silver LAYER Data Cleaning (Pure SQL)
+# STEP 2: SILVER LAYER Data Cleaning (Pure SQL)
 # Objective: Transform the raw Bronze data into a tidy, wide format suitable for analytics. This includes creating a variable crosswalk and pivoting the data into a Kimball-style fact table structure.
 # ==============================================================================
 
-# ----------------------------------------------
+# ------------------------------------------------------------------------------
 # 1. Create Silver Schema & Base Isolation Views
-# ----------------------------------------------
+# ------------------------------------------------------------------------------
 print("1. Creating silver schema and base isolation views...")
 con.execute("""
     CREATE SCHEMA IF NOT EXISTS silver;
@@ -218,10 +218,10 @@ con.execute("""
     SELECT * FROM bronze.acs_metadata;
 """)
 
-# ----------------------------------------------
+# ------------------------------------------------------------------------------
 # 2. Store long-format ACS data in Silver layer
 # Wide PIVOT is handled per concept in Gold layer
-# ----------------------------------------------
+# ------------------------------------------------------------------------------
 print("2. Cleaning acs_bg/ acs_place")
 con.execute("""
     CREATE OR REPLACE TABLE silver.acs_bg AS
@@ -252,19 +252,19 @@ con.execute("""
     FORCE CHECKPOINT;
 """)
 
-# ----------------------------------------------
+# ------------------------------------------------------------------------------
 # 3. Build Automated Variable Crosswalk Table
-# ----------------------------------------------
+# ------------------------------------------------------------------------------
 print("3. Building metadata-driven automated variable crosswalk...")
 con.execute("""
--- ============================================================
+-- ==============================================================================
 -- Silver Layer: Variable Crosswalk (v7)
 -- Structure: year, name, variable, label_clean, concept, table_name
 -- label_clean is used as the column name inside each fact table.
 -- table_name is snake_case prefixed with fact_ (e.g. fact_household_income)
 -- used directly as the Gold layer fact table name with _bg or _town suffix.
 -- E variables only — MOE columns are derived at PIVOT time in Gold layer.
--- ============================================================
+-- ==============================================================================
  
 CREATE OR REPLACE TABLE silver.variable_crosswalk AS
  
@@ -336,9 +336,9 @@ FROM cleaned;
 
 
 
-# ----------------------------------------------
+# ------------------------------------------------------------------------------
 # 4. Clean up & Checkpoint
-# ----------------------------------------------
+# ------------------------------------------------------------------------------
 print("4. Forcing database checkpoint and syncing blocks to disk...")
 con.execute("""
     DROP VIEW IF EXISTS v_bronze_acs_place; 

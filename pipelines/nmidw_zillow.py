@@ -15,9 +15,9 @@ from functions.mother_duck_connector import get_md_connection
 
 con = get_md_connection()
 
-# ----------------------------------------------
-# 1. BRONZE LAYER: Raw Ingestion from CSV
-# ----------------------------------------------
+# ==============================================================================
+# STEP 1: BRONZE LAYER (Raw Ingestion from CSV)
+# ==============================================================================
 print("1. Ingesting raw Zillow CSV files into Bronze layer...")
 con.execute("""
             CREATE OR REPLACE TABLE bronze.zillow_zhvi_long AS
@@ -36,9 +36,9 @@ con.execute("""
             """)
 print("🎉 Step 1 Complete: raw data successfully loaded!")
 
-# ----------------------------------------------
-# 2. SILVER LAYER: Standardization & Data Typing
-# ----------------------------------------------
+# ==============================================================================
+# STEP 2: SILVER LAYER (Standardization & Data Typing)
+# ==============================================================================
 print("2. Refining Zillow data in Silver layer...")
 con.execute("""
             CREATE OR REPLACE VIEW silver.v_bronze_zhvi AS

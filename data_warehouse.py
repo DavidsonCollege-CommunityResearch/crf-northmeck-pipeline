@@ -18,6 +18,9 @@ try:
     print("Executing Census Pipeline...")
     subprocess.run(["python", "pipelines/nmidw_census.py"], env=env, check=True)
 
+    print("Executing Geom Pipeline...")
+    subprocess.run(["python", "pipelines/nmidw_geom.py"], env=env, check=True)
+
     print("\nExecuting Zillow Pipeline...")
     subprocess.run(["python", "pipelines/nmidw_zillow.py"], env=env, check=True)
 
@@ -33,6 +36,9 @@ try:
     print("\nExecuting MH/SU Facilities Pipeline...")
     subprocess.run(["python", "pipelines/nmidw_cdc_places.py"], env=env, check=True)
 
+    print("\nExecuting School Assessment Pipeline...")
+    subprocess.run(["python", "pipelines/nmidw_schools.py"], env=env, check=True)
+
     print("\nExecuting Gold Pipeline...")
     subprocess.run(["python", "pipelines/nmidw_gold.py"], env=env, check=True)
 
@@ -42,9 +48,6 @@ try:
     print("\nExecuting Neighborhood Aggregate Pipeline...")
     subprocess.run(["python", "pipelines/nmidw_neighborhood_aggregate.py"], env=env, check=True)
 
-    # 🌟 [ADDED] Execute Cloud-to-Local Sync after all cloud operations finish successfully
-    print("\nExecuting Cloud-to-Local Sync Pipeline...")
-    subprocess.run(["python", "nmidw_local_download.py"], env=env, check=True)
 
 
     print("\n🌟 All Pipelines Finished! Cloud DW is live, and local backup is ready!")

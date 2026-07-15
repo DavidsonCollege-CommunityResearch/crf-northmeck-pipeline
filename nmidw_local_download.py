@@ -1,6 +1,6 @@
 # ==============================================================================
 # POST-PIPELINE PROCESS: Cloud to Local Sync
-# Author: Paul Park, Gemni Code
+# Author: Paul Park, Gemini Code
 # Objective: Clone the finished MotherDuck cloud database to a local .duckdb file 
 #            for offline analysis, BI tool connection, and backup.
 # ==============================================================================

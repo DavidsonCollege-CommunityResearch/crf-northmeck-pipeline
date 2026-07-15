@@ -14,9 +14,9 @@ from functions.mother_duck_connector import get_md_connection
 
 con = get_md_connection()
 
-# ----------------------------------------------
-# 1. BRONZE LAYER: Raw Ingestion from CSV
-# ----------------------------------------------
+# ==============================================================================
+# STEP 1: BRONZE LAYER (Raw Ingestion from CSV)
+# ==============================================================================
 print("1. Ingesting raw mental health/ substance use facilities CSV files into Bronze layer...")
 con.execute(""" 
             CREATE OR REPLACE TABLE bronze.mh_su_facilities AS

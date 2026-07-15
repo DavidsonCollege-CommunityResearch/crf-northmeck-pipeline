@@ -1,0 +1,48 @@
+Subject Code,Description
+ACT,The ACT composite score of 19 or higher – grade 11
+ACT4B,Met all four The ACT subtest benchmarks – grade 11
+ACTALL,All The ACT subtest benchmarks (sum of benchmarks met)
+ACTEN,The ACT English subtest (Benchmark = 18)
+ACTMA,The ACT Math subtest (Benchmark = 22)
+ACTRD,The ACT Reading subtest (Benchmark = 22)
+ACTSC,The ACT Science subtest (Benchmark = 23)
+AWA,The ACT/WorkKeys Assessments combined indicator – grade 12
+BI,Biology EOC (current year and scores banked to grade 9)
+CGRE,Five-Year Cohort Graduation Rate (extended)
+CGRS,Four-Year Cohort Graduation Rate (standard)
+E2,English II EOC
+ELP,English Language Progress
+ELPA,English learners meeting annual progress toward exiting EL Status
+ELPX,English learners exiting EL Status
+EOC,"Roll up of M1, M3, E2 and BI"
+EOG,"Roll up of MAGS, RDGS, SCGS (Includes NC Math 1 EOCs for grade 8 students)"
+EOG03,Mathematics and Reading grade 3 EOGs combined
+EOG04,Mathematics and Reading grade 4 EOGs combined
+EOG05,"Mathematics, Reading and Science grade 5 EOGs combined"
+EOG06,Mathematics and Reading grade 6 EOGs combined
+EOG07,Mathematics and Reading grade 7 EOGs combined
+EOG08,"Mathematics, Reading, and Science grade EOGs combined (includes NC Math 1 EOCs for grade 8 students) (includes banked NC Math 1 scores to grade 8)"
+M1,NC Math 1 EOC (grades 9 through 13) current year 
+M1SEP,NC Math 1 EOC at grade 8 only (includes banked NC Math 1 scores to grade 8)
+M3,NC Math 3 EOC (current year and scores banked to grade 9)
+M8SEP,Mathematics EOG at grade 8 only
+MA03,Mathematics grade 3 EOGs and alternate (NCEXTEND1)
+MA04,Mathematics grade 4 EOGs and alternate (NCEXTEND1)
+MA05,Mathematics grade 5 EOGs and alternate (NCEXTEND1)
+MA06,Mathematics grade 6 EOGs and alternate (NCEXTEND1)
+MA07,Mathematics grade 7 EOGs and alternate (NCEXTEND1)
+MA08,Mathematics grade 8 EOGs and alternate (NCEXTEND1) and NC Math 1 EOCs
+MAGS,"Roll up of MA03, MA04, MA05, MA06, MA07, and MA08"
+MCR,Math Course Rigor (passing NC Math 3 course)
+PCALL,Roll up of all assessments (total overall composite)
+RD03,Reading grade 3 EOGs and alternate (NCEXTEND1)
+RD04,Reading grade 4 EOGs and alternate (NCEXTEND1)
+RD05,Reading grade 5 EOGs and alternate (NCEXTEND1)
+RD06,Reading grade 6 EOGs and alternate (NCEXTEND1)
+RD07,Reading grade 7 EOGs and alternate (NCEXTEND1)
+RD08,Reading  grade 8 EOGs and alternate (NCEXTEND1)
+RDGS,"Roll up of RD03, RD04, RD05, RD06, RD07 and RD08"
+SC05,Science grade 5 EOGs and alternate (NCEXTEND1)
+SC08,Science grade 8 EOGs and alternate (NCEXTEND1)
+SCGS,Science at grades 5 and 8 combined
+WK,WorkKeys concentrators achieving silver or higher certificate 
