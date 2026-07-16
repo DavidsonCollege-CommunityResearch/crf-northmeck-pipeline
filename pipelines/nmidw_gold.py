@@ -437,6 +437,8 @@ con.execute("""
             longitude           DOUBLE PRECISION,
             type_facility       VARCHAR(10),
             facility_type_label VARCHAR(50),
+            payment_accepted    VARCHAR(200),
+            services            VARCHAR(200),
             is_mecklenburg      BOOLEAN
         );
     

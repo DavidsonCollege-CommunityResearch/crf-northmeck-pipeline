@@ -64,6 +64,8 @@ con.execute("""
                     WHEN 'HRSA' THEN 'HRSA Health Center'
                     ELSE TRIM(type_facility)
                 END AS facility_type_label,
+                TRIM(payment_accepted),
+                TRIM(services),
                 -- Flag facilities within Mecklenburg County for primary analysis
                 CASE
                     WHEN LOWER(TRIM(county)) = 'mecklenburg' THEN TRUE
